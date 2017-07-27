@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.7)
-
 project(ExtendedKF)
+
+cmake_minimum_required (VERSION 3.5)
 
 add_definitions(-std=c++11)
 
