@@ -13,6 +13,7 @@ using std::vector;
  */
 FusionEKF::FusionEKF() {
   is_initialized_ = false;
+  //int step_ = 0;
 
   previous_timestamp_ = 0;
 
@@ -31,36 +32,48 @@ FusionEKF::FusionEKF() {
         0, 0.0009, 0,
         0, 0, 0.09;
 
+  H_laser_ << 1, 0, 0, 0,
+              0, 1, 0, 0;
+
+  Hj_ << 1, 1, 0, 0,
+         1, 1, 0, 0,
+		 1, 1, 1, 1;
+
   /**
   TODO:
     * Finish initializing the FusionEKF.
     * Set the process and measurement noises
   */
 
-  MatrixXd Q_ = MatrixXd(4, 4);
+  /*MatrixXd Q_ = MatrixXd(4, 4);
   MatrixXd P_ = MatrixXd(4, 4);
   MatrixXd x_ = VectorXd(4);
   MatrixXd F_ = MatrixXd(4, 4);
-
-  H_laser_ << 1, 0, 0, 0,
-	          0, 1, 0, 0;
 
   Q_ << 0, 0, 0, 0,
 	  0, 0, 0, 0,
 	  0, 0, 0, 0,
 	  0, 0, 0, 0;
 
-  P_ << 1, 0, 0, 0,
-	  0, 1, 0, 0,
-	  0, 0, 1000, 0,
-	  0, 0, 0, 1000;
-
   x_ << 0, 0, 0, 0;
+  */
 
-  F_ << 1, 0, 1, 0,
-	  0, 1, 0, 1,
-	  0, 0, 1, 0,
-	  0, 0, 0, 1;
+
+  ekf_.P_ = MatrixXd(4, 4);
+  ekf_.P_ <<
+			 1, 0, 0, 0,
+			 0, 1, 0, 0,
+			 0, 0, 1000, 0,
+			 0, 0, 0, 1000;
+
+  ekf_.F_ = MatrixXd(4, 4);
+  ekf_.F_ <<
+			1, 0, 1, 0,
+			0, 1, 0, 1,
+			0, 0, 1, 0,
+			0, 0, 0, 1;
+
+  //ekf_.Init(x_,P_,  F_, Hj_,  R_radar_,  Q_);
 
 }
 
@@ -85,18 +98,21 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     // first measurement
     cout << "EKF: " << endl;
     ekf_.x_ = VectorXd(4);
-	ekf_.x_ << 1, 1, 1, 1; 
+
+	//ekf_.x_ << 1, 1, 1, 1;
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
       Convert radar from polar to cartesian coordinates and initialize state.
       */
-		double rho = measurement_pack.raw_measurements_[0],
-			phi = measurement_pack.raw_measurements_[1],
+		double
+		    rho    = measurement_pack.raw_measurements_[0],
+			phi    = measurement_pack.raw_measurements_[1],
 			rhodot = measurement_pack.raw_measurements_[2];
 		
-		double px = rho * cos(phi),
-			py = rho * sin(phi),
+		double
+		    px = rho    * cos(phi),
+			py = rho    * sin(phi),
 			vx = rhodot * cos(phi),
 			vy = rhodot * sin(phi);;
 
@@ -107,9 +123,12 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       /**
       Initialize state.
       */
-		ekf_.x_ << measurement_pack.raw_measurements_[0],
+		ekf_.x_ <<
+			measurement_pack.raw_measurements_[0],
 			measurement_pack.raw_measurements_[1], 0, 0;
     }
+
+    previous_timestamp_ = measurement_pack.timestamp_;
 
     // done initializing, no need to predict or update
     is_initialized_ = true;
@@ -141,6 +160,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   double noise_ax = 9.0;
   double noise_ay = 9.0;
 
+  ekf_.Q_ = MatrixXd(4, 4);
   ekf_.Q_ << 
 	  dt_4 / 4 * noise_ax, 0, dt_3 / 2 * noise_ax, 0,
 	  0, dt_4 / 4 * noise_ay, 0, dt_3 / 2 * noise_ay,
@@ -175,6 +195,12 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   }
 
   // print the output
-  cout << "x_ = " << ekf_.x_ << endl;
+  // cout << "x_ = " << ekf_.x_ << endl;
+  /*
   cout << "P_ = " << ekf_.P_ << endl;
+  cout << "F_ = " << ekf_.F_ << endl;
+  cout << "Q_ = " << ekf_.Q_ << endl;
+  cout << "H_ = " << ekf_.H_ << endl;
+  cout << "R_ = " << ekf_.R_ << endl;
+  /*/
 }

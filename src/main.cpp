@@ -43,6 +43,8 @@ int main()
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
 
+	//std::cout << "Message!!!" << std::endl;
+
     if (length && length > 2 && data[0] == '4' && data[1] == '2')
     {
 
